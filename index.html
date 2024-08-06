@@ -6,32 +6,66 @@
     <title>3D 文创作品展示</title>
     <style>
         body { margin: 0; overflow: hidden; }
-        #container { width: 100vw; height: 100vh; }
+        #container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; }
+        #buttonContainer { position: absolute; top: 20px; left: 20px; z-index: 100; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; }
     </style>
 </head>
 <body>
     <div id="container"></div>
+    <div id="buttonContainer">
+        <button id="nextButton">切换页面</button>
+    </div>
     <script type="module">
         import * as THREE from 'https://unpkg.com/three@0.126.1/build/three.module.js';
         import { OrbitControls } from 'https://unpkg.com/three@0.126.1/examples/jsm/controls/OrbitControls.js';
 
-        const scene = new THREE.Scene();
+        const scenes = [new THREE.Scene(), new THREE.Scene(), new THREE.Scene()];
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.getElementById('container').appendChild(renderer.domElement);
 
-        const light = new THREE.DirectionalLight(0xffffff, 1);
-        light.position.set(1, 1, 1).normalize();
-        scene.add(light);
+        const lights = [
+            new THREE.DirectionalLight(0xffffff, 1),
+            new THREE.DirectionalLight(0xffffff, 1),
+            new THREE.DirectionalLight(0xffffff, 1)
+        ];
+        const ambientLights = [
+            new THREE.AmbientLight(0x404040),
+            new THREE.AmbientLight(0x404040),
+            new THREE.AmbientLight(0x404040)
+        ];
 
-        const ambientLight = new THREE.AmbientLight(0x404040);
-        scene.add(ambientLight);
+        lights.forEach((light, index) => {
+            light.position.set(1, 1, 1).normalize();
+            scenes[index].add(light);
+            scenes[index].add(ambientLights[index]);
+        });
 
-        const geometry = new THREE.BoxGeometry();
-        const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-        const cube = new THREE.Mesh(geometry, material);
-        scene.add(cube);
+        // Adding models to different scenes
+        const geometries = [
+            new THREE.BoxGeometry(),
+            new THREE.SphereGeometry(0.5, 32, 32),
+            new THREE.ConeGeometry(0.5, 1, 32)
+        ];
+        const materials = [
+            new THREE.MeshStandardMaterial({ color: 0x00ff00 }),
+            new THREE.MeshStandardMaterial({ color: 0x0000ff }),
+            new THREE.MeshStandardMaterial({ color: 0xff0000 })
+        ];
+        const objects = geometries.map((geometry, index) => {
+            const material = materials[index];
+            const mesh = new THREE.Mesh(geometry, material);
+            scenes[index].add(mesh);
+            return mesh;
+        });
+
+        // Adding a beautiful background to all scenes
+        const backgroundLoader = new THREE.TextureLoader();
+        backgroundLoader.load('https://images.unsplash.com/photo-1605460375648-278bcbd579a6', function(texture) {
+            scenes.forEach(scene => scene.background = texture);
+        });
 
         camera.position.z = 5;
 
@@ -41,12 +75,16 @@
         controls.screenSpacePanning = false;
         controls.maxPolarAngle = Math.PI / 2;
 
+        let currentSceneIndex = 0;
+
         function animate() {
             requestAnimationFrame(animate);
-            cube.rotation.x += 0.01;
-            cube.rotation.y += 0.01;
+            objects.forEach(obj => {
+                obj.rotation.x += 0.01;
+                obj.rotation.y += 0.01;
+            });
             controls.update();
-            renderer.render(scene, camera);
+            renderer.render(scenes[currentSceneIndex], camera);
         }
         animate();
 
@@ -54,6 +92,11 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
+        });
+
+        // Event listener for the next button
+        document.getElementById('nextButton').addEventListener('click', () => {
+            currentSceneIndex = (currentSceneIndex + 1) % scenes.length;
         });
     </script>
 </body>
