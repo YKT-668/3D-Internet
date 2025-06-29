@@ -19,6 +19,7 @@
     <script type="module">
         import * as THREE from 'https://unpkg.com/three@0.126.1/build/three.module.js';
         import { OrbitControls } from 'https://unpkg.com/three@0.126.1/examples/jsm/controls/OrbitControls.js';
+        import { GLTFLoader } from 'https://unpkg.com/three@0.126.1/examples/jsm/loaders/GLTFLoader.js';
 
         const scenes = [new THREE.Scene(), new THREE.Scene(), new THREE.Scene()];
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -44,23 +45,18 @@
         });
 
         // Adding models to different scenes
-        const geometries = [
-            new THREE.BoxGeometry(),
-            new THREE.SphereGeometry(0.5, 32, 32),
-            new THREE.ConeGeometry(0.5, 1, 32)
-        ];
-        const materials = [
-            new THREE.MeshStandardMaterial({ color: 0x00ff00 }),
-            new THREE.MeshStandardMaterial({ color: 0x0000ff }),
-            new THREE.MeshStandardMaterial({ color: 0xff0000 })
-        ];
-        const objects = geometries.map((geometry, index) => {
-            const material = materials[index];
-            const mesh = new THREE.Mesh(geometry, material);
-            scenes[index].add(mesh);
-            return mesh;
-        });
+        const loader = new GLTFLoader();
 
+        loader.load('Scene.gltf', function(gltf) {
+        const model = gltf.scene;
+         scenes[0].add(model);
+
+        // 可选: 调整模型的位置、缩放或旋转
+            model.position.set(0, 0, 0);
+            model.scale.set(20, 20, 20);
+         }, undefined, function(error) {
+        console.error('An error happened while loading the model:', error);
+        });
         // Adding a beautiful background to all scenes
         const backgroundLoader = new THREE.TextureLoader();
         backgroundLoader.load('https://images.unsplash.com/photo-1605460375648-278bcbd579a6', function(texture) {
@@ -79,10 +75,6 @@
 
         function animate() {
             requestAnimationFrame(animate);
-            objects.forEach(obj => {
-                obj.rotation.x += 0.01;
-                obj.rotation.y += 0.01;
-            });
             controls.update();
             renderer.render(scenes[currentSceneIndex], camera);
         }
